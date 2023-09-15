@@ -1,5 +1,5 @@
-/*  
-    A logger modul egy egyszerű naplózó modul, ami a konzolra és fájlba is írja a naplóbejegyzéseket.
+/*
+   A logger modul egy egyszerű naplózó modul, ami a konzolra és fájlba is írja a naplóbejegyzéseket.
 
     Dependenciák:
     - fs
@@ -17,22 +17,20 @@
     - lastDay: Az utolsó naplófájl létrehozásának napja
 
     Függvények:
-    - log(level: string, message: string, file?: string, line?: number): void
+    - log(level: string, message: string): void
         - level: A naplóbejegyzés szintje
         - message: A naplóbejegyzés üzenete
-        - file: A fájl, ahol a naplóbejegyzés történt
-        - line: A sor, ahol a naplóbejegyzés történt
-    - info(message: string, file?: string, line?: number): void
-    - warning(message: string, file?: string, line?: number): void
-    - error(message: string, file?: string, line?: number): void
-    - debug(message: string, file?: string, line?: number): void
-    - critical(message: string, file?: string, line?: number): void
+    - info(message: string): void
+    - warning(message: string): void
+    - error(message: string): void
+    - debug(message: string): void
+    - critical(message: string): void
 
     Példa használat:
     const Logger = require('./logger');
     Logger.info('A szerver elindult!');
 
- */
+*/
 
 const fs = require('fs');
 
@@ -62,12 +60,26 @@ let logFileSizeInBytes = logFileExists ? fs.statSync(`${logFileDirPath}/latest.l
 let logFolderExists = fs.existsSync(logFileDirPath);
 let lastDay = new Date().getDate();
 
+/**
+ * Ez a funkció egy naplóbejegyzést hoz létre. Amit a konzolra és fájlba is kiír.
+ *
+ * @param {String} level - A naplóbejegyzés szintje.
+ * @param {String} message - A naplóbejegyzés üzenete.
+ * 
+ */
 function log(level, message) {
     const date = new Date();
     date.setHours(date.getHours() + 2); // UTC+2 
     const timestamp = date.toISOString().split('T')[1].split('.')[0];
+    
+    const tracker = new Error();
+    const line = tracker.stack.split('\n')[3];
+    const result = line.match(/(.*\\)(.*\.js):(\d+):(\d+)/);
+    const fileName = result[2];
+    const lineNumber = result[3];
+    
     const logMessage = `[${timestamp}] [${level}] ${message}`;
-    console.log(`${Colors[level]}${logMessage}${resetColor}`);
+    console.log(`${Colors[level]}${logMessage}${resetColor} [${fileName}:${lineNumber}]`);
     
     // Ha nem létezik a naplókönyvtár, akkor létrehozzuk.
     if (!logFolderExists) {
@@ -111,6 +123,13 @@ function log(level, message) {
     logFileSizeInBytes += `${logMessage}\n`.length;
 }
 
+/**
+ * Ezt a funkciót használjuk, ha egy naplóbejegyzést kezelőt szeretnénk létrehozni.
+ *
+ * @param {String} level - A naplóbejegyzés szintje.
+ * @returns {Function} - Visszatér a függvénnyel, ami egy naplóbejegyzést hoz létre.
+ * 
+ */
 function createLogger(level) {
     return (message) => {
         log(level, message);
