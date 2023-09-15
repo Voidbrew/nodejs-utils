@@ -46,7 +46,7 @@ const Logger = require('./logger');
 class SSHService {
 
     escapeShellArg(arg) {
-        return `'${clearedArg.replace(/'/g, "'\\''")}'`;
+        return `'${arg.replace(/'/g, "'\\''")}'`;
     }
     
     constructor(ip,port,username,password) {
