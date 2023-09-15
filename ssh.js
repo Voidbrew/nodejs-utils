@@ -19,11 +19,11 @@
     - ssh: ssh2.Client - A kapcsolatot kezelő SSH objektum
  
     Függvények: 
-    - escapeShellArg(arg): string - Kiszűri a veszélyes karaktereket egy parancsból
-    - constructor(ip, port, username, password): void - Osztály konstruktora 
+    - escapeShellArg(arg: Array): string - Kiszűri a veszélyes karaktereket egy parancsból
+    - constructor(ip: string, port: number, username: string, password: string): void - Osztály konstruktora 
     - connect(): Promise<void> - Kapcsolódás a szerverhez 
     - test(): Promise<boolean> - Kapcsolat tesztelése 
-    - rawExec(command): Promise<Object> - Parancs végrehajtása nyers kimenettel 
+    - rawExec(command: string): Promise<Object> - Parancs végrehajtása nyers kimenettel 
     - exec(command, args): Promise<string> - Parancs végrehajtása feldolgozott kimenettel 
     - close(): Promise<void> - Kapcsolat bontása 
  
@@ -45,6 +45,11 @@ const Logger = require('./logger');
 
 class SSHService {
 
+    /**
+     * Kiszűri a veszélyes karaktereket egy parancsból
+     * @param {Array} arg : A parancs argumentumai
+     * @returns {string} : A veszélyes karakterektől megtisztított parancs
+     */
     escapeShellArg(arg) {
         return `'${arg.replace(/'/g, "'\\''")}'`;
     }
@@ -62,6 +67,11 @@ class SSHService {
         return this;
     }
     
+    /**
+     * Kapcsolódás a szerverhez
+     * @returns {Promise<void>} : A kapcsolat állapotától függően true vagy false
+     * @throws {Error} : Ha nem sikerült a kapcsolódás
+     */
     async connect(){
         try {
 
@@ -81,6 +91,11 @@ class SSHService {
         }
     }
 
+    /**
+     * Ezzel csak tesztelni lehet a kapcsolatot.
+     * @returns {Promise<boolean>} : A kapcsolat állapotától függően true vagy false
+     * @throws {Error} : Ha nem sikerült a kapcsolódás
+     */
     async test() {
         return new Promise((resolve, reject) => {
             this.ssh.on('ready', () => {
@@ -97,6 +112,11 @@ class SSHService {
         });
     }
 
+    /**
+     * Nyers bemenetű parancs végrehajtása
+     * @param {string} command 
+     * @returns {Promise<Object>} : A parancs végrehajtásának eredménye
+     */
     async rawExec(command) {
         return new Promise((resolve, reject) => {
             this.ssh.exec(command, (err, stream) => {
@@ -113,6 +133,12 @@ class SSHService {
         });
     }
 
+    /**
+     * Védett parancs végrehajtása
+     * @param {string} command 
+     * @param {Array} args 
+     * @returns {Promise<string>} : A parancs végrehajtásának eredménye
+     */
     async exec(command, args){
         const safeArgs = args ? args.map(arg => this.escapeShellArg(arg)) : [];
         const safeCommand = `${command} ${safeArgs.join(' ')}`;
@@ -120,6 +146,10 @@ class SSHService {
         return result;
     }
 
+    /**
+     * A kapcsolatot bontja
+     * @returns {Promise<boolean>} : A kapcsolat bontása utána true
+     */
     async close() {
         return new Promise((resolve, reject) => {
             this.ssh.on('end', () => {
