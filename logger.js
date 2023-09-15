@@ -62,10 +62,8 @@ let lastDay = new Date().getDate();
 
 /**
  * Ez a funkció egy naplóbejegyzést hoz létre. Amit a konzolra és fájlba is kiír.
- *
  * @param {String} level - A naplóbejegyzés szintje.
  * @param {String} message - A naplóbejegyzés üzenete.
- * 
  */
 function log(level, message) {
     const date = new Date();
@@ -124,11 +122,9 @@ function log(level, message) {
 }
 
 /**
- * Ezt a funkciót használjuk, ha egy naplóbejegyzést kezelőt szeretnénk létrehozni.
- *
+ * Ezt a funkciót használjuk, hogy a naplóbejegyzések szintjeihez megfelelő színt rendeljünk.
  * @param {String} level - A naplóbejegyzés szintje.
  * @returns {Function} - Visszatér a függvénnyel, ami egy naplóbejegyzést hoz létre.
- * 
  */
 function createLogger(level) {
     return (message) => {
