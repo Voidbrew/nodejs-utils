@@ -1,100 +1,70 @@
-/*: 
- 
-    Ez a fájl egy SSHService osztályt exportál, ami lehetővé teszi egy
-    távoli szerverhez való kapcsolódást és parancsok futtatását SSH-n keresztül. 
- 
-    Dependenciák: 
-    - ssh2: SSH kapcsolat kezeléséhez 
-    - Logger: Naplózáshoz 
- 
-    Konstansok: 
-    Nincsenek konstansok. 
-
-    Változók:
-    - ip: string - A szerver IP címe
-    - port: number - A szerver portja
-    - username: string - A szerverhez való kapcsolódáshoz szükséges felhasználónév
-    - password: string - A szerverhez való kapcsolódáshoz szükséges jelszó
-    - status: boolean - A kapcsolat állapota
-    - ssh: ssh2.Client - A kapcsolatot kezelő SSH objektum
- 
-    Függvények: 
-    - escapeShellArg(arg: Array): string - Kiszűri a veszélyes karaktereket egy parancsból
-    - constructor(ip: string, port: number, username: string, password: string): void - Osztály konstruktora 
-    - connect(): Promise<void> - Kapcsolódás a szerverhez 
-    - test(): Promise<boolean> - Kapcsolat tesztelése 
-    - rawExec(command: string): Promise<Object> - Parancs végrehajtása nyers kimenettel 
-    - exec(command, args): Promise<string> - Parancs végrehajtása feldolgozott kimenettel 
-    - close(): Promise<void> - Kapcsolat bontása 
- 
-    Példa használat:
-    const SSHService = require('./ssh');
-
-    const ssh = new SSHService('127.0.0.1', 22, 'user', 'password');
-
-    ssh.connect()
-    .then(() => {
-        ssh.exec('ls -l')
-        .then(result => {
-            console.log(result);  
-        });
-    });
-*/
 const ssh2 = require('ssh2');
 const Logger = require('./logger');
 
-class SSHService {
+/**
+* Example:
+* const SSHService = require('./ssh-service');
+* const ssh = new SSHService('127.0.0.1', 22, 'username', 'password');
+* await ssh.connect();
+* const result = await ssh.exec('ls', ['-l']);
+* console.log(result.data);
+* await ssh.close();
 
+* Represents an SSH service for establishing and managing SSH connections.
+* @class
+*/
+class SSHService {
+    
     /**
-     * Kiszűri a veszélyes karaktereket egy parancsból
-     * @param {Array} arg : A parancs argumentumai
-     * @returns {string} : A veszélyes karakterektől megtisztított parancs
+     * Escapes a shell argument.
+     * @param {string} arg - The argument to escape.
+     * @returns {string} The escaped argument.
      */
     escapeShellArg(arg) {
         return `'${arg.replace(/'/g, "'\\''")}'`;
     }
     
-    constructor(ip,port,username,password) {
-
+    /**
+     * Creates a new SSH service.
+     * @param {string} ip - The IP address of the SSH server.
+     * @param {number} port - The port of the SSH server.
+     * @param {string} username - The username to use for the SSH connection.
+     * @param {string} password - The password to use for the SSH connection.
+     * @returns {SSHService} The new SSH service.
+     */
+    constructor(ip, port, username, password) {
         this.ip = ip;
         this.port = port;
         this.username = username;
         this.password = password;
         this.status = false;
-
         this.ssh = null;
-
         return this;
     }
     
+
     /**
-     * Kapcsolódás a szerverhez
-     * @returns {Promise<void>} : A kapcsolat állapotától függően true vagy false
-     * @throws {Error} : Ha nem sikerült a kapcsolódás
+     * Connects to the SSH server.
+     * @returns {Promise<void>} A promise that resolves when the connection is established.
      */
     async connect(){
         try {
-
             if(!this.ip || !this.port || !this.username || !this.password)
-                throw new Error('Nincs megadva minden adat!');
-
+                throw new Error('Not all data is provided!');
             this.ssh = new ssh2.Client();
-
             const status = await this.test();
-            if(!status) throw new Error('Nem sikerült a kapcsolódás!');
-
-            Logger.debug(`SSH (${this.ip}:${this.port}) kapcsolat létrejött.`);
+            if(!status) throw new Error('Connection failed!');
+            Logger.debug(`SSH connection (${this.ip}:${this.port}) established.`);
             this.status = true;
-
         } catch (err) {
-            Logger.critical(`SSH (${this.ip}:${this.port}) ${err}`);
+            Logger.critical(`SSH connection (${this.ip}:${this.port}) ${err}`);
         }
     }
 
     /**
-     * Ezzel csak tesztelni lehet a kapcsolatot.
-     * @returns {Promise<boolean>} : A kapcsolat állapotától függően true vagy false
-     * @throws {Error} : Ha nem sikerült a kapcsolódás
+     * Tests the SSH connection.
+     * @returns {Promise<boolean>} A promise that resolves with a boolean indicating whether the connection is successful.
+     * @throws {Error} An error is thrown if the connection fails
      */
     async test() {
         return new Promise((resolve, reject) => {
@@ -113,9 +83,10 @@ class SSHService {
     }
 
     /**
-     * Nyers bemenetű parancs végrehajtása
-     * @param {string} command 
-     * @returns {Promise<Object>} : A parancs végrehajtásának eredménye
+    * Executes a raw command on the SSH server.
+    * @param {string} command - The command to execute.
+    * @returns {Promise<object>} A promise that resolves with the command result.
+    * @throws {Error} An error is thrown if the command fails.
      */
     async rawExec(command) {
         return new Promise((resolve, reject) => {
@@ -134,10 +105,11 @@ class SSHService {
     }
 
     /**
-     * Védett parancs végrehajtása
-     * @param {string} command 
-     * @param {Array} args 
-     * @returns {Promise<string>} : A parancs végrehajtásának eredménye
+     * Executes a command on the SSH server.
+     * @param {string} command - The command to execute.
+     * @param {string[]} args - The arguments to pass to the command.
+     * @returns {Promise<object>} A promise that resolves with the command result.
+     * @throws {Error} An error is thrown if the command fails.
      */
     async exec(command, args){
         const safeArgs = args ? args.map(arg => this.escapeShellArg(arg)) : [];
@@ -147,8 +119,8 @@ class SSHService {
     }
 
     /**
-     * A kapcsolatot bontja
-     * @returns {Promise<boolean>} : A kapcsolat bontása utána true
+     * Closes the SSH connection.
+     * @returns {Promise<boolean>} A promise that resolves with a boolean indicating whether the connection is closed.
      */
     async close() {
         return new Promise((resolve, reject) => {
@@ -158,7 +130,6 @@ class SSHService {
             }).end();
         });
     }
-
 }
 
 module.exports = SSHService;
