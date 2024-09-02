@@ -1,37 +1,3 @@
-/*
-   A logger modul egy egyszerű naplózó modul, ami a konzolra és fájlba is írja a naplóbejegyzéseket.
-
-    Dependenciák:
-    - fs
-    
-    Konstansok:
-    - levels: A naplóbejegyzések szintjei
-    - Colors: A naplóbejegyzések szintjeinek színei
-    - logLevelsColorsReset: A naplóbejegyzések szintjeinek színeinek visszaállítása
-
-    Változók:
-    - logFileDirPath: A naplófájlok könyvtára
-    - maximumLogFileSize: A naplófájlok maximális mérete
-    - logFileExists: A naplófájl létezése
-    - logFileSizeInBytes: A naplófájl mérete
-    - lastDay: Az utolsó naplófájl létrehozásának napja
-
-    Függvények:
-    - log(level: string, message: string): void
-        - level: A naplóbejegyzés szintje
-        - message: A naplóbejegyzés üzenete
-    - info(message: string): void
-    - warning(message: string): void
-    - error(message: string): void
-    - debug(message: string): void
-    - critical(message: string): void
-
-    Példa használat:
-    const Logger = require('./logger');
-    Logger.info('A szerver elindult!');
-
-*/
-
 const fs = require('fs');
 
 const levels = {
@@ -61,9 +27,9 @@ let logFolderExists = fs.existsSync(logFileDirPath);
 let lastDay = new Date().getDate();
 
 /**
- * Ez a funkció egy naplóbejegyzést hoz létre. Amit a konzolra és fájlba is kiír.
- * @param {String} level - A naplóbejegyzés szintje.
- * @param {String} message - A naplóbejegyzés üzenete.
+ * This function creates a log entry that is printed to the console and written to a file.
+ * @param {String} level - The level of the log entry.
+ * @param {String} message - The message of the log entry.
  */
 function log(level, message) {
     const date = new Date();
@@ -79,20 +45,20 @@ function log(level, message) {
     const logMessage = `[${timestamp}] [${level}] ${message}`;
     console.log(`${Colors[level]}${logMessage}${resetColor} [${fileName}:${lineNumber}]`);
     
-    // Ha nem létezik a naplókönyvtár, akkor létrehozzuk.
+    // Create the log directory if it doesn't exist.
     if (!logFolderExists) {
         fs.mkdirSync(logFileDirPath);
         logFolderExists = true;
     }
 
-    // Ha nem létezik a naplófájl, akkor létrehozzuk és beállítjuk a méretét 0-ra.
+    // Create the log file and set its size to 0 if it doesn't exist.
     if (!logFileExists) {
         fs.writeFileSync(`${logFileDirPath}/latest.log`, '');
         logFileExists = true;
         logFileSizeInBytes = 0;
     }
 
-    // Ha túl nagy a naplófájl, akkor töröljük elöszőr a DEBUG bejegyzéseket, ha nincs, akkor pedig a legrégebbi bejegyzéseket.
+    // If the log file size exceeds the maximum size, remove DEBUG entries if they exist, otherwise remove the oldest entries.
     if ((logFileSizeInBytes+4) > maximumLogFileSize) {
         const data = fs.readFileSync(`${logFileDirPath}/latest.log`, 'utf8').split('\n');
         const debugLines = data.filter(line => line.includes('[DEBUG]'));
@@ -109,7 +75,7 @@ function log(level, message) {
         }
     }
 
-    // Ha új nap van, akkor átnevezzük a naplófájlt
+    // If it's a new day, rename the log file.
     if (date.getDate() !== lastDay) {
         fs.renameSync(`${logFileDirPath}/latest.log`, `${logFileDirPath}/${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}.log`);
         fs.writeFileSync(`${logFileDirPath}/latest.log`, '');
@@ -122,9 +88,9 @@ function log(level, message) {
 }
 
 /**
- * Ezt a funkciót használjuk, hogy a naplóbejegyzések szintjeihez megfelelő színt rendeljünk.
- * @param {String} level - A naplóbejegyzés szintje.
- * @returns {Function} - Visszatér a függvénnyel, ami egy naplóbejegyzést hoz létre.
+ * This function is used to assign colors to log levels.
+ * @param {String} level - The level of the log entry.
+ * @returns {Function} - Returns the function that creates a log entry.
  */
 function createLogger(level) {
     return (message) => {
